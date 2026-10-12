@@ -1,0 +1,85 @@
+# Exports Windows and macOS builds in the cloud and publishes them.
+#
+# - Push a tag like v0.1.0 to build and attach both builds to a GitHub
+#   Release of that name.
+# - Or run it by hand from the Actions tab ("Run workflow") to just get the
+#   builds as downloadable artifacts on the run's page.
+#
+# GODOT_VERSION must match the editor version the project is made with.
+name: Build game
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # Needed to create releases.
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GAME_NAME: "AshenDivine"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot and export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          wget -q "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          wget -q "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          templates="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$templates"
+          unzip -q "Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mv templates/* "$templates/"
+          rm -rf templates *.zip *.tpz
+
+      - name: Import project
+        # Builds the .godot import cache that exporting needs.
+        run: ./godot --headless --import || true
+
+      - name: Export Windows
+        run: |
+          mkdir -p build/windows
+          ./godot --headless --export-release "Windows Desktop" "build/windows/${GAME_NAME}.exe"
+          test -f "build/windows/${GAME_NAME}.exe"
+          (cd build/windows && zip -q -r "../${GAME_NAME}-windows.zip" .)
+
+      - name: Export macOS
+        run: |
+          mkdir -p build/macos
+          ./godot --headless --export-release "macOS" "build/macos/${GAME_NAME}.zip"
+          test -f "build/macos/${GAME_NAME}.zip"
+          mv "build/macos/${GAME_NAME}.zip" "build/${GAME_NAME}-macos.zip"
+
+      - name: Upload builds to the run
+        uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: |
+            build/${{ env.GAME_NAME }}-windows.zip
+            build/${{ env.GAME_NAME }}-macos.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/${{ env.GAME_NAME }}-windows.zip
+            build/${{ env.GAME_NAME }}-macos.zip
+          body: |
+            **Windows:** download `${{ env.GAME_NAME }}-windows.zip`, unzip it and run `${{ env.GAME_NAME }}.exe`.
+            Windows may warn about an unrecognized app: click **More info → Run anyway**.
+
+            **macOS:** download `${{ env.GAME_NAME }}-macos.zip` and unzip it. The app isn't signed by Apple,
+            so the first time, right-click the app and choose **Open**, then **Open** again.
+            If macOS says it's damaged, run this in Terminal once and try again:
+            `xattr -dr com.apple.quarantine "/path/to/Ashen Divine.app"`
+
+            **Controls:** WASD move, mouse look, Shift dodge, Space jump, left click attack (hold for a heavy thrust),
+            right click fire pistol (shoot an enemy mid-swing to parry), F drink flask, Esc pause.
