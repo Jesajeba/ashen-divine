@@ -1,0 +1,242 @@
+[gd_scene format=3 uid="uid://7k1pm0q3l8uf"]
+
+[ext_resource type="Script" uid="uid://c0kfmpa1r1txn" path="res://player/player.gd" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://cf4mhvvxb4q17" path="res://player/sword.tscn" id="2_sword"]
+[ext_resource type="PackedScene" path="res://player/pistol.tscn" id="3_pistol"]
+[ext_resource type="Script" path="res://player/stamina.gd" id="4_stamina"]
+[ext_resource type="Script" path="res://player/resource_bar.gd" id="5_resource_bar"]
+[ext_resource type="Script" path="res://player/health.gd" id="6_health"]
+[ext_resource type="PackedScene" path="res://player/flask.tscn" id="7_flask"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="8_pause_menu"]
+
+[sub_resource type="Shader" id="Shader_vignette"]
+code = "shader_type canvas_item;
+
+// Darkened screen edges for mood, plus a red tint at the edges scaled by
+// danger (set from player.gd at low health).
+uniform float darkness : hint_range(0.0, 1.0) = 0.45;
+uniform float danger : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 danger_color : source_color = vec4(0.55, 0.0, 0.0, 1.0);
+
+void fragment() {
+	vec2 centered = (UV - 0.5) * vec2(1.0, 0.8);
+	float edge = smoothstep(0.25, 0.75, length(centered));
+	vec3 color = mix(vec3(0.0), danger_color.rgb, danger);
+	float alpha = edge * mix(darkness, 0.85, danger);
+	COLOR = vec4(color, alpha);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = SubResource("Shader_vignette")
+shader_parameter/darkness = 0.45
+shader_parameter/danger = 0.0
+shader_parameter/danger_color = Color(0.55, 0, 0, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.4
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" unique_id=1401992580]
+script = ExtResource("1_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1471982230]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Head" type="Node3D" parent="." unique_id=293589626]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1415865152]
+current = true
+
+[node name="Sword" parent="Head/Camera3D" unique_id=680635815 instance=ExtResource("2_sword")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15237185, 0, 0)
+
+[node name="Pistol" parent="Head/Camera3D" unique_id=1728875852 instance=ExtResource("3_pistol")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.17803742, 0, 0)
+
+[node name="Flask" parent="Head/Camera3D" instance=ExtResource("7_flask")]
+
+[node name="PlayerLight" type="OmniLight3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.25, 0.15)
+light_color = Color(1, 0.85, 0.7, 1)
+light_energy = 0.9
+light_volumetric_fog_energy = 0.3
+omni_range = 9.0
+omni_attenuation = 1.2
+
+[node name="Stamina" type="Node" parent="."]
+script = ExtResource("4_stamina")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("6_health")
+
+[node name="PauseMenu" parent="." instance=ExtResource("8_pause_menu")]
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=40369694]
+
+[node name="Vignette" type="ColorRect" parent="HUD"]
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DamageFlash" type="ColorRect" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.6, 0, 0, 0)
+
+[node name="HealthBar" type="Control" parent="HUD" node_paths=PackedStringArray("source")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 28.0
+offset_right = 352.0
+offset_bottom = 44.0
+mouse_filter = 2
+script = ExtResource("5_resource_bar")
+source = NodePath("../../Health")
+fill_color = Color(0.7, 0.12, 0.1, 1)
+width_per_point = 3.16
+
+[node name="StaminaBar" type="Control" parent="HUD" node_paths=PackedStringArray("source")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 50.0
+offset_right = 352.0
+offset_bottom = 62.0
+mouse_filter = 2
+script = ExtResource("5_resource_bar")
+source = NodePath("../../Stamina")
+
+[node name="Message" type="Label" parent="HUD"]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -220.0
+offset_right = 400.0
+offset_bottom = -170.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 30
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FlaskCharges" type="HBoxContainer" parent="HUD"]
+offset_left = 32.0
+offset_top = 70.0
+offset_right = 92.0
+offset_bottom = 88.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Charge1" type="ColorRect" parent="HUD/FlaskCharges"]
+custom_minimum_size = Vector2(12, 18)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 0.55, 0.15, 1)
+
+[node name="Charge2" type="ColorRect" parent="HUD/FlaskCharges"]
+custom_minimum_size = Vector2(12, 18)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 0.55, 0.15, 1)
+
+[node name="Charge3" type="ColorRect" parent="HUD/FlaskCharges"]
+custom_minimum_size = Vector2(12, 18)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 0.55, 0.15, 1)
+
+[node name="Crosshair" type="ColorRect" parent="HUD" unique_id=505739883]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.8)
+
+[node name="Banner" type="Control" parent="HUD"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Band" type="ColorRect" parent="HUD/Banner"]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -80.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Text" type="Label" parent="HUD/Banner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.8, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 88
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DeathFade" type="ColorRect" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="DeathText" type="Label" parent="HUD/DeathFade"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6, 0.05, 0.04, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 112
+text = "YOU DIED"
+horizontal_alignment = 1
+vertical_alignment = 1

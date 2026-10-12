@@ -1,0 +1,124 @@
+[gd_scene format=3 uid="uid://cf4mhvvxb4q17"]
+
+[ext_resource type="Script" uid="uid://cly5i3ofs3l7c" path="res://player/sword.gd" id="1_sword"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_steel"]
+albedo_color = Color(0.82, 0.84, 0.88, 1)
+metallic = 1.0
+roughness = 0.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_blade"]
+material = SubResource("StandardMaterial3D_steel")
+top_radius = 0.002
+bottom_radius = 0.007
+height = 1.0
+radial_segments = 6
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hilt"]
+albedo_color = Color(0.55, 0.55, 0.58, 1)
+metallic = 1.0
+roughness = 0.35
+
+[sub_resource type="SphereMesh" id="SphereMesh_cup"]
+material = SubResource("StandardMaterial3D_hilt")
+radius = 0.055
+height = 0.055
+is_hemisphere = true
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_quillons"]
+material = SubResource("StandardMaterial3D_hilt")
+top_radius = 0.006
+bottom_radius = 0.006
+height = 0.26
+radial_segments = 8
+rings = 1
+
+[sub_resource type="TorusMesh" id="TorusMesh_knuckle_bow"]
+material = SubResource("StandardMaterial3D_hilt")
+inner_radius = 0.072
+outer_radius = 0.082
+rings = 24
+ring_segments = 6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wire"]
+albedo_color = Color(0.15, 0.12, 0.1, 1)
+metallic = 0.6
+roughness = 0.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_grip"]
+material = SubResource("StandardMaterial3D_wire")
+top_radius = 0.016
+bottom_radius = 0.016
+height = 0.15
+
+[sub_resource type="SphereMesh" id="SphereMesh_pommel"]
+material = SubResource("StandardMaterial3D_hilt")
+radius = 0.025
+height = 0.05
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_slash"]
+size = Vector3(1.8, 1, 1.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_thrust"]
+size = Vector3(0.5, 0.5, 2.4)
+
+[node name="Sword" type="Node3D" unique_id=441801567]
+script = ExtResource("1_sword")
+knockback = null
+recover_time = null
+combo_grace = null
+hold_threshold = null
+charge_time = null
+heavy_cost = null
+heavy_damage_min = null
+heavy_damage_max = null
+heavy_knockback = null
+lunge_distance_min = null
+lunge_distance_max = null
+
+[node name="Pivot" type="Node3D" parent="." unique_id=1109023799]
+transform = Transform3D(0.9781481, -0.20791203, 0, 0.20211068, 0.9508554, 0.23456529, -0.048768766, -0.22944453, 0.97210014, 0.28, -0.28, -0.4)
+
+[node name="Blade" type="MeshInstance3D" parent="Pivot" unique_id=1910933790]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.575, 0)
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_blade")
+
+[node name="Cup" type="MeshInstance3D" parent="Pivot" unique_id=588334868]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.075, 0)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_cup")
+
+[node name="Quillons" type="MeshInstance3D" parent="Pivot" unique_id=50361230]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0.08, 0)
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_quillons")
+
+[node name="KnuckleBow" type="MeshInstance3D" parent="Pivot" unique_id=1763161118]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0)
+cast_shadow = 0
+mesh = SubResource("TorusMesh_knuckle_bow")
+
+[node name="Grip" type="MeshInstance3D" parent="Pivot" unique_id=1902871245]
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_grip")
+
+[node name="Pommel" type="MeshInstance3D" parent="Pivot" unique_id=826883428]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.09, 0)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_pommel")
+
+[node name="SlashHitbox" type="Area3D" parent="." unique_id=1797236404]
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SlashHitbox" unique_id=1688624763]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.95)
+shape = SubResource("BoxShape3D_slash")
+
+[node name="ThrustHitbox" type="Area3D" parent="." unique_id=1266211729]
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ThrustHitbox" unique_id=1414563554]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.2)
+shape = SubResource("BoxShape3D_thrust")

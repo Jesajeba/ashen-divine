@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://b8lycxd1mxds7"]
+
+[ext_resource type="PackedScene" uid="uid://7k1pm0q3l8uf" path="res://player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://enemy/enemy.tscn" id="2_enemy"]
+[ext_resource type="Script" path="res://level/navigation_region.gd" id="3_nav_region"]
+[ext_resource type="PackedScene" path="res://enemy/dog.tscn" id="4_dog"]
+[ext_resource type="PackedScene" path="res://enemy/caster.tscn" id="5_caster"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_level"]
+geometry_parsed_geometry_type = 1
+geometry_source_geometry_mode = 1
+agent_height = 1.9
+agent_radius = 0.5
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.35, 0.4, 0.35, 1)
+uv1_scale = Vector3(20, 20, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(50, 1, 50)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(50, 1, 50)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(2, 2, 2)
+
+[node name="Main" type="Node3D" unique_id=1419630377]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1847215471]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1067366109]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=213239517 groups=["navigation_mesh_source_group"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=117367474]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=2103627510]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Crate1" type="StaticBody3D" parent="." unique_id=53606113 groups=["navigation_mesh_source_group"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -6)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate1" unique_id=1408784905]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate1" unique_id=1626293386]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="Crate2" type="StaticBody3D" parent="." unique_id=2106643009 groups=["navigation_mesh_source_group"]]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -5, 1, -4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate2" unique_id=1204504763]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate2" unique_id=621425151]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="Crate3" type="StaticBody3D" parent="." unique_id=1913661678 groups=["navigation_mesh_source_group"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 8)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate3" unique_id=1089367234]
+mesh = SubResource("BoxMesh_crate")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate3" unique_id=1592386169]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_level")
+script = ExtResource("3_nav_region")
+
+[node name="Player" parent="." unique_id=470176899 instance=ExtResource("1_player")]
+mouse_sensitivity = 0.001
+
+[node name="Enemy1" parent="." instance=ExtResource("2_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -12)
+
+[node name="Enemy2" parent="." instance=ExtResource("2_enemy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -16)
+
+[node name="Dog1" parent="." instance=ExtResource("4_dog")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 6)
+
+[node name="Dog2" parent="." instance=ExtResource("4_dog")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.5, 0, 7.5)
+
+[node name="Caster1" parent="." instance=ExtResource("5_caster")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -14)

@@ -1,0 +1,209 @@
+[gd_scene format=3 uid="uid://cxnr7uv2dasy7"]
+
+[ext_resource type="Script" uid="uid://cml0vgprgem55" path="res://ui/main_menu.gd" id="1_menu"]
+[ext_resource type="PackedScene" path="res://level/campfire.tscn" id="2_campfire"]
+[ext_resource type="Script" uid="uid://bb65ibkiivw0l" path="res://level/music_cue.gd" id="3_music_cue"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_night"]
+sky_top_color = Color(0.015, 0.02, 0.045, 1)
+sky_horizon_color = Color(0.07, 0.08, 0.11, 1)
+ground_bottom_color = Color(0.01, 0.01, 0.012, 1)
+ground_horizon_color = Color(0.07, 0.08, 0.11, 1)
+sun_angle_max = 8.0
+
+[sub_resource type="Sky" id="Sky_night"]
+sky_material = SubResource("ProceduralSkyMaterial_night")
+
+[sub_resource type="Environment" id="Environment_night"]
+background_mode = 2
+sky = SubResource("Sky_night")
+ambient_light_source = 3
+ambient_light_energy = 0.5
+tonemap_mode = 3
+glow_enabled = true
+glow_bloom = 0.08
+fog_enabled = true
+fog_light_color = Color(0.05, 0.06, 0.09, 1)
+fog_density = 0.035
+fog_sky_affect = 0.5
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.025
+volumetric_fog_albedo = Color(0.7, 0.75, 0.9, 1)
+volumetric_fog_length = 40.0
+
+[sub_resource type="Gradient" id="Gradient_ground"]
+colors = PackedColorArray(0.55, 0.55, 0.55, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="Noise_ground"]
+frequency = 0.05
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="Tex_ground"]
+width = 256
+height = 256
+noise = SubResource("Noise_ground")
+color_ramp = SubResource("Gradient_ground")
+seamless = true
+
+[sub_resource type="StandardMaterial3D" id="Mat_ground"]
+albedo_color = Color(0.14, 0.13, 0.11, 1)
+albedo_texture = SubResource("Tex_ground")
+uv1_scale = Vector3(35, 35, 35)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+material = SubResource("Mat_ground")
+size = Vector2(140, 140)
+
+[sub_resource type="Gradient" id="Gradient_shade"]
+colors = PackedColorArray(0, 0, 0, 0.85, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="Tex_shade"]
+gradient = SubResource("Gradient_shade")
+width = 256
+height = 4
+
+[node name="MainMenu" type="Node3D" unique_id=661519625]
+script = ExtResource("1_menu")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=86455094]
+environment = SubResource("Environment_night")
+
+[node name="Moon" type="DirectionalLight3D" parent="." unique_id=566837398]
+transform = Transform3D(-1, 0, 0, 0, 0.643, 0.766, 0, 0.766, -0.643, 0, 20, 0)
+light_color = Color(0.6, 0.7, 1, 1)
+light_energy = 0.25
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="." unique_id=4660759]
+mesh = SubResource("PlaneMesh_ground")
+
+[node name="Campfire" parent="." unique_id=1469786890 instance=ExtResource("2_campfire")]
+
+[node name="Trees" type="Node3D" parent="." unique_id=2104812436]
+
+[node name="CameraFocus" type="Marker3D" parent="." unique_id=559402660]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 0.9, 0)
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1292137603]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2, 1.7, 7)
+current = true
+fov = 60.0
+
+[node name="MusicCue" type="Node" parent="." unique_id=780191086]
+script = ExtResource("3_music_cue")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1584463025]
+
+[node name="Shade" type="TextureRect" parent="UI" unique_id=196617128]
+anchors_preset = -1
+anchor_right = 0.55
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("Tex_shade")
+expand_mode = 1
+
+[node name="Menu" type="VBoxContainer" parent="UI" unique_id=71530067]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 110.0
+offset_top = -230.0
+offset_right = 700.0
+offset_bottom = 230.0
+grow_vertical = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="UI/Menu" unique_id=673517614]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.82, 0.6, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 76
+text = "ASHEN DIVINE"
+
+[node name="Tagline" type="Label" parent="UI/Menu" unique_id=148677847]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.57, 0.52, 1)
+theme_override_font_sizes/font_size = 20
+text = "Only embers remember the gods."
+
+[node name="Spacer" type="Control" parent="UI/Menu" unique_id=815803425]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BeginButton" type="Button" parent="UI/Menu" unique_id=1398689962]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_colors/font_focus_color = Color(1, 0.85, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.7, 0.35, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 34
+text = "Begin"
+flat = true
+alignment = 0
+
+[node name="VolumeRow" type="HBoxContainer" parent="UI/Menu" unique_id=388513132]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="VolumeLabel" type="Label" parent="UI/Menu/VolumeRow" unique_id=1288690643]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "Volume"
+
+[node name="VolumeSlider" type="HSlider" parent="UI/Menu/VolumeRow" unique_id=589932265]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_vertical = 4
+value = 50.0
+
+[node name="VolumeValue" type="Label" parent="UI/Menu/VolumeRow" unique_id=1328603134]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "50%"
+
+[node name="QuitButton" type="Button" parent="UI/Menu" unique_id=582674720]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_colors/font_focus_color = Color(1, 0.85, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.7, 0.35, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 34
+text = "Quit"
+flat = true
+alignment = 0
+
+[node name="Version" type="Label" parent="UI" unique_id=1868542274]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -50.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.45, 0.43, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "Prototype build"
+horizontal_alignment = 2
+
+[node name="Fade" type="ColorRect" parent="UI" unique_id=1779548982]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

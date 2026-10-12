@@ -1,0 +1,231 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://enemy/reaper.gd" id="1_reaper"]
+[ext_resource type="PackedScene" path="res://enemy/green_flame.tscn" id="2_flame"]
+[ext_resource type="PackedScene" path="res://enemy/scythe_boomerang.tscn" id="3_scythe"]
+[ext_resource type="PackedScene" path="res://enemy/aoe_orb.tscn" id="4_aoe_orb"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wing"]
+albedo_color = Color(0.05, 0.07, 0.05, 1)
+roughness = 0.9
+emission_enabled = true
+emission = Color(0.3, 1, 0.35, 1)
+emission_energy_multiplier = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_wing_inner"]
+material = SubResource("StandardMaterial3D_wing")
+size = Vector3(1.3, 0.9, 0.04)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wing_outer"]
+material = SubResource("StandardMaterial3D_wing")
+size = Vector3(0.9, 0.6, 0.04)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.5
+height = 2.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.08, 0.08, 0.1, 1)
+roughness = 0.95
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_robe"]
+material = SubResource("StandardMaterial3D_robe")
+top_radius = 0.28
+bottom_radius = 0.55
+height = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_hood"]
+material = SubResource("StandardMaterial3D_robe")
+radius = 0.3
+height = 0.62
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bone"]
+albedo_color = Color(0.82, 0.79, 0.7, 1)
+roughness = 0.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_skull"]
+material = SubResource("StandardMaterial3D_bone")
+radius = 0.19
+height = 0.36
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eyes"]
+albedo_color = Color(0.75, 0.4, 1, 1)
+emission_enabled = true
+emission = Color(0.7, 0.3, 1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_eye"]
+material = SubResource("StandardMaterial3D_eyes")
+radius = 0.035
+height = 0.07
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pole"]
+albedo_color = Color(0.15, 0.1, 0.08, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pole"]
+material = SubResource("StandardMaterial3D_pole")
+top_radius = 0.03
+bottom_radius = 0.035
+height = 2.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blade"]
+albedo_color = Color(0.55, 0.55, 0.6, 1)
+metallic = 0.8
+roughness = 0.3
+emission_enabled = true
+emission = Color(0.7, 0.3, 1, 1)
+emission_energy_multiplier = 0.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_blade"]
+material = SubResource("StandardMaterial3D_blade")
+size = Vector3(0.04, 0.18, 1.1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glint"]
+shading_mode = 0
+albedo_color = Color(1, 0.95, 0.8, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_glint"]
+material = SubResource("StandardMaterial3D_glint")
+radius = 0.12
+height = 0.24
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bar_back"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.6)
+
+[sub_resource type="QuadMesh" id="QuadMesh_bar_back"]
+material = SubResource("StandardMaterial3D_bar_back")
+size = Vector2(0.8, 0.09)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bar_fill"]
+shading_mode = 0
+albedo_color = Color(0.75, 0.1, 0.1, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_bar_fill"]
+material = SubResource("StandardMaterial3D_bar_fill")
+size = Vector2(0.76, 0.06)
+
+[node name="Reaper" type="CharacterBody3D"]
+script = ExtResource("1_reaper")
+boomerang_scene = ExtResource("3_scythe")
+aoe_orb_scene = ExtResource("4_aoe_orb")
+max_health = 60
+walk_speed = 1.6
+chase_speed = 3.4
+acceleration = 7.0
+turn_speed = 4.0
+eye_height = 2.2
+sight_range = 40.0
+sight_angle = 360.0
+hearing_range = 40.0
+lose_interest_time = 999.0
+patrol_radius = 0.0
+attack_cooldown_min = 1.4
+attack_cooldown_max = 2.6
+windup_turn_speed = 6.0
+strike_stop_distance = 2.0
+engage_range = 6.0
+strafe_speed = 1.3
+projectile_scene = ExtResource("2_flame")
+dodge_chance = 0.15
+dodge_speed = 8.0
+dodge_cooldown = 4.0
+stagger_time = 1.3
+rest_rotation = Vector3(-15, 0, 0)
+stagger_rotation = Vector3(-120, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.6
+target_desired_distance = 0.5
+height = 2.6
+radius = 0.5
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CylinderMesh_robe")
+
+[node name="Hood" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+mesh = SubResource("SphereMesh_hood")
+
+[node name="Skull" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, -0.13)
+mesh = SubResource("SphereMesh_skull")
+
+[node name="EyeL" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 2.25, -0.3)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_eye")
+
+[node name="EyeR" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 2.25, -0.3)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_eye")
+
+[node name="PhaseLight" type="OmniLight3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -0.3)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="Wings" type="Node3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0.3)
+
+[node name="Left" type="Node3D" parent="Model/Wings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0, 0)
+
+[node name="Inner" type="MeshInstance3D" parent="Model/Wings/Left"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.7, 0.15, 0)
+mesh = SubResource("BoxMesh_wing_inner")
+
+[node name="Outer" type="MeshInstance3D" parent="Model/Wings/Left"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.35, 0)
+mesh = SubResource("BoxMesh_wing_outer")
+
+[node name="Right" type="Node3D" parent="Model/Wings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 0)
+
+[node name="Inner" type="MeshInstance3D" parent="Model/Wings/Right"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 0.15, 0)
+mesh = SubResource("BoxMesh_wing_inner")
+
+[node name="Outer" type="MeshInstance3D" parent="Model/Wings/Right"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.35, 0)
+mesh = SubResource("BoxMesh_wing_outer")
+
+[node name="WeaponPivot" type="Node3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 1.5, -0.15)
+
+[node name="Pole" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("CylinderMesh_pole")
+
+[node name="Blade" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 1.42, -0.5)
+mesh = SubResource("BoxMesh_blade")
+
+[node name="Glint" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.33, -1.0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("SphereMesh_glint")
+
+[node name="HealthBar" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.9, 0)
+visible = false
+
+[node name="Back" type="MeshInstance3D" parent="HealthBar"]
+cast_shadow = 0
+mesh = SubResource("QuadMesh_bar_back")
+
+[node name="Fill" type="MeshInstance3D" parent="HealthBar"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.002)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_bar_fill")

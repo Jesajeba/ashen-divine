@@ -1,0 +1,159 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://enemy/caster.gd" id="1_caster"]
+[ext_resource type="PackedScene" path="res://enemy/projectile.tscn" id="2_projectile"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.38
+height = 1.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.22, 0.2, 0.3, 1)
+roughness = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_robe"]
+material = SubResource("StandardMaterial3D_robe")
+top_radius = 0.2
+bottom_radius = 0.4
+height = 1.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_hood"]
+material = SubResource("StandardMaterial3D_robe")
+radius = 0.21
+height = 0.46
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eyes"]
+albedo_color = Color(0.5, 0.85, 1, 1)
+emission_enabled = true
+emission = Color(0.4, 0.8, 1, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="SphereMesh" id="SphereMesh_eye"]
+material = SubResource("StandardMaterial3D_eyes")
+radius = 0.03
+height = 0.06
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.3, 0.2, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_staff"]
+material = SubResource("StandardMaterial3D_wood")
+top_radius = 0.022
+bottom_radius = 0.028
+height = 1.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_orb"]
+albedo_color = Color(0.5, 0.8, 1, 1)
+emission_enabled = true
+emission = Color(0.4, 0.8, 1, 1)
+emission_energy_multiplier = 0.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_orb"]
+material = SubResource("StandardMaterial3D_orb")
+radius = 0.08
+height = 0.16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glint"]
+shading_mode = 0
+albedo_color = Color(1, 0.95, 0.8, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_glint"]
+material = SubResource("StandardMaterial3D_glint")
+radius = 0.09
+height = 0.18
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bar_back"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.6)
+
+[sub_resource type="QuadMesh" id="QuadMesh_bar_back"]
+material = SubResource("StandardMaterial3D_bar_back")
+size = Vector2(0.8, 0.09)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bar_fill"]
+shading_mode = 0
+albedo_color = Color(0.75, 0.1, 0.1, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_bar_fill"]
+material = SubResource("StandardMaterial3D_bar_fill")
+size = Vector2(0.76, 0.06)
+
+[node name="Caster" type="CharacterBody3D"]
+script = ExtResource("1_caster")
+max_health = 8
+walk_speed = 1.6
+chase_speed = 3.0
+eye_height = 1.7
+sight_range = 18.0
+sight_angle = 140.0
+attack_cooldown_min = 1.0
+attack_cooldown_max = 2.0
+engage_range = 15.0
+strafe_speed = 1.6
+dodge_chance = 0.25
+projectile_scene = ExtResource("2_projectile")
+rest_rotation = Vector3(-20, 0, 0)
+stagger_rotation = Vector3(-140, 0, 0)
+glow_mesh = NodePath("Model/WeaponPivot/Orb")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.925, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.6
+target_desired_distance = 0.5
+height = 1.85
+radius = 0.4
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+mesh = SubResource("CylinderMesh_robe")
+
+[node name="Hood" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+mesh = SubResource("SphereMesh_hood")
+
+[node name="EyeL" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.66, -0.18)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_eye")
+
+[node name="EyeR" type="MeshInstance3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.66, -0.18)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_eye")
+
+[node name="WeaponPivot" type="Node3D" parent="Model"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 1.1, -0.1)
+
+[node name="Staff" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("CylinderMesh_staff")
+
+[node name="Orb" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_orb")
+
+[node name="Glint" type="MeshInstance3D" parent="Model/WeaponPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("SphereMesh_glint")
+
+[node name="HealthBar" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+
+[node name="Back" type="MeshInstance3D" parent="HealthBar"]
+cast_shadow = 0
+mesh = SubResource("QuadMesh_bar_back")
+
+[node name="Fill" type="MeshInstance3D" parent="HealthBar"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.002)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_bar_fill")
