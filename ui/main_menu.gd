@@ -20,6 +20,8 @@ const GAME_SCENE := "res://level/level_01.tscn"
 @onready var quit_button: Button = %QuitButton
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var volume_value: Label = %VolumeValue
+@onready var sensitivity_slider: HSlider = %SensitivitySlider
+@onready var sensitivity_value: Label = %SensitivityValue
 
 var _camera_base: Vector3
 var _time := 0.0
@@ -38,6 +40,9 @@ func _ready() -> void:
 	volume_slider.value = roundf(Audio.master_volume * 100.0)
 	volume_value.text = "%d%%" % roundi(volume_slider.value)
 	volume_slider.value_changed.connect(_on_volume_changed)
+	sensitivity_slider.value = Settings.mouse_sensitivity
+	sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
+	sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
 	begin_button.pressed.connect(_on_begin_pressed)
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
 	begin_button.grab_focus()
@@ -64,6 +69,11 @@ func _on_begin_pressed() -> void:
 	var tween := create_tween()
 	tween.tween_property(fade, "color:a", 1.0, 1.0)
 	tween.tween_callback(func() -> void: get_tree().change_scene_to_file(GAME_SCENE))
+
+
+func _on_sensitivity_changed(value: float) -> void:
+	Settings.set_mouse_sensitivity(value)
+	sensitivity_value.text = "%.2f" % value
 
 
 func _on_volume_changed(value: float) -> void:

@@ -18,7 +18,7 @@ permissions:
 
 env:
   GODOT_VERSION: "4.7.2"
-  GAME_NAME: "AshenDivine"
+  GAME_NAME: "Godhusk"
 
 jobs:
   export:
@@ -79,7 +79,7 @@ jobs:
             **macOS:** download `${{ env.GAME_NAME }}-macos.zip` and unzip it. The app isn't signed by Apple,
             so the first time, right-click the app and choose **Open**, then **Open** again.
             If macOS says it's damaged, run this in Terminal once and try again:
-            `xattr -dr com.apple.quarantine "/path/to/Ashen Divine.app"`
+            `xattr -dr com.apple.quarantine "/path/to/Godhusk.app"`
 
             **Controls:** WASD move, mouse look, Shift dodge, Space jump, left click attack (hold for a heavy thrust),
             right click fire pistol (shoot an enemy mid-swing to parry), F drink flask, Esc pause.

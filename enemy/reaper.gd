@@ -34,6 +34,10 @@ signal phase_two_started
 @export var aoe_spread := 1.5 ## Max meters an AoE orb lands from the player, so standing still isn't safe either.
 @export var hover_rise_speed := 5.0 ## How quickly it closes the gap to its flying height.
 @export var voice_chance := 0.3 ## Chance it growls when starting an attack.
+@export var intro_enabled := true ## Waits hidden above the arena and drops in when awakened.
+@export var intro_drop_height := 7.0 ## Meters above its spot it drops from; starting partly in the ceiling makes it drop through it.
+@export var death_spill_time := 2.6 ## Seconds it bleeds out on its feet before falling.
+@export var death_spill_pulses := 26 ## Blood bursts over that time.
 @export var phase_two_color := Color(0.3, 1.0, 0.35)
 @export var phase_two_cooldown_scale := 0.45 ## Multiplies the attack cooldowns in phase two.
 @export var phase_two_speed_scale := 1.25 ## Multiplies chase speed in phase two.
@@ -148,6 +152,11 @@ var _hovering := false
 var _hover_y := 0.0
 var _wing_pose := WING_FOLDED
 var _wing_target := WING_FOLDED
+var _death_throes := false ## Screaming and bleeding out, before the fall.
+var _intro_pending := false ## Hidden above the arena, waiting to drop in.
+var _intro_playing := false
+var _landing_position: Vector3
+var _collision_layer: int
 
 
 func _ready() -> void:
@@ -156,14 +165,81 @@ func _ready() -> void:
 	wings.scale = Vector3.ONE * 0.01
 	phase_light.visible = false
 
+	if intro_enabled:
+		# Wait hidden and untouchable, high above where it will land.
+		_intro_pending = true
+		_landing_position = global_position
+		global_position += Vector3.UP * intro_drop_height
+		_collision_layer = collision_layer
+		collision_layer = 0
+		visible = false
+		_eye_mat.emission_energy_multiplier = 0.0
+		if _glow_light:
+			_glow_light.light_energy = 0.0
 
-## Wakes the boss up to fight. Until then it stands still.
+
+## Wakes the boss up to fight: plays its entrance first if it has one.
 func awaken() -> void:
-	if _awake:
+	if _awake or _intro_playing:
+		return
+	if _intro_pending:
+		_play_intro()
 		return
 	_awake = true
 	_notice_player()
 	_growl()
+
+
+## Drops from the dark above the arena, lands crouched, rises as its eyes
+## ignite, raises the scythe with a growl and slams it down. Then it fights.
+func _play_intro() -> void:
+	_intro_pending = false
+	_intro_playing = true
+	visible = true
+	model.rotation.x = deg_to_rad(-15.0) # Hunched forward as it falls.
+	weapon_pivot.rotation = _deg(Vector3(-60, 0, 0))
+
+	var tween := create_tween()
+	tween.tween_property(self, "global_position", _landing_position, 0.55) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(_intro_land)
+	tween.tween_interval(0.6)
+	# Rise as the eyes ignite and the scythe goes up.
+	tween.tween_property(model, "position:y", 0.0, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(model, "rotation:x", deg_to_rad(10.0), 0.9).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(weapon_pivot, "rotation", _deg(Vector3(45, 0, 0)), 0.9) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(_eye_mat, "emission_energy_multiplier", _eye_energy * 6.0, 0.9)
+	if _glow_light:
+		tween.parallel().tween_property(_glow_light, "light_energy", glow_energy, 0.9)
+	tween.tween_callback(func() -> void:
+		_growl()
+		_shake_player(0.04))
+	tween.tween_interval(0.7)
+	# Slam the scythe down, then settle into a fighting stance.
+	tween.tween_property(weapon_pivot, "rotation", _deg(Vector3(-100, 0, 0)), 0.18) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func() -> void:
+		Audio.play_at("enemy_swing", weapon_pivot.global_position)
+		_shake_player(0.05))
+	tween.tween_property(model, "rotation:x", 0.0, 0.5).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(weapon_pivot, "rotation", _deg(rest_rotation), 0.6).set_trans(Tween.TRANS_SINE)
+	tween.parallel().tween_property(_eye_mat, "emission_energy_multiplier", _eye_energy, 0.6)
+	tween.tween_callback(_finish_intro)
+
+
+func _intro_land() -> void:
+	collision_layer = _collision_layer
+	model.position.y = -0.4 # Crouched from the impact.
+	Audio.play_at("boss_land", global_position)
+	Vfx.dust(global_position + Vector3.UP * 0.2, 1.5)
+	_shake_player(0.1)
+
+
+func _finish_intro() -> void:
+	_intro_playing = false
+	_awake = true
+	_notice_player()
 
 
 func is_phase_two() -> bool:
@@ -171,6 +247,8 @@ func is_phase_two() -> bool:
 
 
 func take_hit(damage: int, impulse: Vector3) -> int:
+	if _intro_pending or _intro_playing:
+		return 0 # Untouchable until its entrance is over.
 	_awake = true # Hitting it wakes it up, arena or not.
 	var dealt := super(damage, impulse)
 	if not _phase_two and health > 0 and health <= max_health / 2:
@@ -203,6 +281,10 @@ func _update_health_bar() -> void:
 
 func _process(delta: float) -> void:
 	super(delta)
+	if _death_throes:
+		# Tremble while bleeding out.
+		model.position.x = randf_range(-0.04, 0.04)
+		model.position.z = randf_range(-0.04, 0.04)
 	if not wings.visible:
 		return
 	# Ease toward the target wing pose, with a flap on top: lazy on the ground,
@@ -229,6 +311,69 @@ func _enter_stagger() -> void:
 	_growl()
 
 
+## Instead of dropping at once, the reaper screams and bleeds out on its feet
+## first; then the normal death (fall, effects, died signal) plays.
+func _die() -> void:
+	if _death_throes:
+		return
+	_death_throes = true
+	_set_state(State.DEAD) # Stops all behavior; hits no longer land.
+	_parryable = false
+	glint.visible = false
+	_kill_tween(_glow_tween)
+	_kill_tween(_pose_tween)
+	_kill_tween(_stance_tween)
+
+	Audio.play("boss_death_scream")
+	_growl()
+	_shake_player(0.06)
+	if _player and _player.has_method("hitstop"):
+		_player.call("hitstop", 0.35) # A long freeze on the killing blow.
+
+	# Rear back with the scythe hanging, eyes flaring.
+	_pose_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_pose_tween.tween_property(model, "rotation:x", deg_to_rad(18.0), 0.6)
+	_pose_tween.parallel().tween_property(model, "position:y", 0.0, 0.4)
+	_pose_tween.parallel().tween_property(weapon_pivot, "rotation", _deg(stagger_rotation), 0.8)
+	_pose_tween.parallel().tween_property(_eye_mat, "emission_energy_multiplier", _eye_energy * 6.0, 0.4)
+
+	# Blood gushes out in pulses, pooling around its feet.
+	var spill := create_tween().set_loops(death_spill_pulses)
+	spill.tween_callback(_spill_blood)
+	spill.tween_interval(death_spill_time / death_spill_pulses)
+
+	get_tree().create_timer(death_spill_time + 0.2).timeout.connect(_fall)
+
+
+func _spill_blood() -> void:
+	var center := _body_center() + Vector3.UP * 0.3
+	# Out in every direction, mostly upward, like a fountain.
+	var angle := randf() * TAU
+	var direction := Vector3(cos(angle), randf_range(0.6, 1.6), sin(angle))
+	Vfx.blood(center, direction, 1.5)
+	Vfx.blood_decal(global_position + Vector3(randf_range(-2.0, 2.0), 1.0, randf_range(-2.0, 2.0)),
+			randf_range(0.8, 1.6))
+	if randi() % 3 == 0:
+		Audio.play_at("blood_gush", center)
+		_shake_player(0.02)
+	if _player and global_position.distance_to(_player.global_position) < screen_blood_range \
+			and randi() % 6 == 0:
+		_player.call("splatter_screen", 0.4)
+
+
+func _fall() -> void:
+	_death_throes = false
+	model.position.x = 0.0
+	model.position.z = 0.0
+	Vfx.blood_decal(global_position + Vector3.UP, 3.0) # The final pool.
+	super._die()
+
+
+func _shake_player(amount: float) -> void:
+	if _player and _player.has_method("shake"):
+		_player.call("shake", amount)
+
+
 func _growl() -> void:
 	Audio.play_at("reaper_voice", global_position + Vector3.UP * eye_height)
 
@@ -241,6 +386,9 @@ func _set_state(state: State) -> void:
 
 
 func _apply_custom_vertical(_delta: float) -> bool:
+	if _intro_pending or _intro_playing:
+		velocity.y = 0.0 # The entrance moves it; gravity mustn't fight that.
+		return true
 	if not _hovering:
 		return false
 	velocity.y = (_hover_y - global_position.y) * hover_rise_speed

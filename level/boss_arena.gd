@@ -4,7 +4,7 @@ extends Node3D
 ## boss dies, the fog gate fades away and the bar is hidden.
 
 @export var boss: Enemy
-@export var defeat_message := "DIVINE FALLEN"
+@export var defeat_message := "GOD SLAIN"
 @export var defeat_color := Color(0.95, 0.8, 0.45)
 @export var boss_music := "boss" ## Track from Audio.MUSIC played during the fight.
 @export var after_music := "main" ## Track to return to after victory.

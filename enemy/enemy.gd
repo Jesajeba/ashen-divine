@@ -71,6 +71,8 @@ enum State { PATROL, CHASE, ATTACK, DODGE, STAGGER, DEAD }
 @export var eye_mesh: NodePath = ^"Model/EyeL" ## Its material's glow also builds in windups.
 @export var glow_energy := 0.6 ## A small light in its eye color, so it's visible in the dark. 0 disables it.
 @export var glow_range := 3.5
+@export var screen_blood_range := 3.5 ## Dying this close to the player splatters blood on their screen.
+@export var kill_hitstop := 0.18 ## Seconds the game freezes when this enemy dies.
 
 ## Each attack has a stance ("lean" in degrees, positive leans back, and
 ## "crouch" in meters) held for the whole attack, the distance range it's used
@@ -627,6 +629,12 @@ func _die() -> void:
 	Audio.play_at("enemy_death", global_position + Vector3.UP)
 	Vfx.blood(_body_center(), Vector3.UP, 2.5)
 	Vfx.blood_decal(_body_center(), 1.6) # A pool where it falls.
+	if _player and _player.has_method("hitstop"):
+		_player.call("hitstop", kill_hitstop) # The killing blow lands hardest.
+	if _player and _player.has_method("splatter_screen"):
+		var dist := global_position.distance_to(_player.global_position)
+		if dist < screen_blood_range:
+			_player.splatter_screen(1.0 - dist / screen_blood_range)
 	died.emit()
 
 	_kill_tween(_pose_tween)

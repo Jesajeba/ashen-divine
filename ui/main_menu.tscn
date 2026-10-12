@@ -120,7 +120,7 @@ theme_override_colors/font_color = Color(0.92, 0.82, 0.6, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 76
-text = "ASHEN DIVINE"
+text = "GODHUSK"
 
 [node name="Tagline" type="Label" parent="UI/Menu" unique_id=148677847]
 layout_mode = 2
@@ -150,6 +150,7 @@ layout_mode = 2
 theme_override_constants/separation = 14
 
 [node name="VolumeLabel" type="Label" parent="UI/Menu/VolumeRow" unique_id=1288690643]
+custom_minimum_size = Vector2(130, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
 theme_override_font_sizes/font_size = 22
@@ -169,6 +170,35 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
 theme_override_font_sizes/font_size = 22
 text = "50%"
+
+[node name="SensitivityRow" type="HBoxContainer" parent="UI/Menu"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="SensitivityLabel" type="Label" parent="UI/Menu/SensitivityRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "Sensitivity"
+
+[node name="SensitivitySlider" type="HSlider" parent="UI/Menu/SensitivityRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+size_flags_vertical = 4
+min_value = 0.2
+max_value = 3.0
+step = 0.05
+value = 1.0
+
+[node name="SensitivityValue" type="Label" parent="UI/Menu/SensitivityRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "1.00"
 
 [node name="QuitButton" type="Button" parent="UI/Menu" unique_id=582674720]
 unique_name_in_owner = true

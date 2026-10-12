@@ -29,6 +29,11 @@ signal hit_landed(impact: float, damage_dealt: int)
 @export var recover_time := 0.45
 @export var combo_grace := 0.35 ## Extra time after recovering to continue the combo.
 
+@export_group("Blood Coating")
+@export var blood_per_hit := 0.1 ## Coating added per point of impact (0-1) of a landed hit, plus a base amount.
+@export var blood_max := 0.85 ## Most of the blade that can be covered (0-1).
+@export var blood_dry_rate := 0.004 ## Coating lost per second as it dries off.
+
 @export_group("Heavy Thrust")
 @export var hold_threshold := 0.25 ## Hold longer than this to charge instead of a light attack.
 @export var charge_time := 1.2 ## Time to reach full charge.
@@ -75,10 +80,32 @@ const HEAVY_STRIKE_TIME := 0.2 ## Also the lunge duration, so the thrust lands a
 ## Set by the wielder. Without one, attacks are free.
 var stamina: Stamina
 
+## Drawn over the blade and cup. Blood shows where a noise pattern falls under
+## the coverage, so it spreads in blotches as coverage grows.
+const BLOOD_SHADER := """
+shader_type spatial;
+render_mode blend_mix, cull_back, depth_draw_never;
+
+uniform sampler2D noise_tex : hint_default_white, repeat_enable;
+uniform float coverage : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 blood_color : source_color = vec4(0.32, 0.01, 0.01, 1.0);
+
+void fragment() {
+	float n = texture(noise_tex, UV * vec2(2.0, 5.0)).r;
+	float mask = smoothstep(1.0 - coverage, 1.0 - coverage + 0.06, n);
+	ALBEDO = blood_color.rgb * (0.65 + 0.35 * n);
+	ROUGHNESS = 0.2;
+	SPECULAR = 0.7;
+	ALPHA = mask * blood_color.a;
+}
+"""
+
 @onready var pivot: Node3D = $Pivot
 
 var _rest_position: Vector3
 var _rest_rotation: Vector3
+var _blood := 0.0 ## How much of the blade is coated, 0 to 1.
+var _blood_material: ShaderMaterial
 var _step := 0
 var _busy := false
 var _committed := false
@@ -94,9 +121,41 @@ var _charge := 0.0 ## 0 to 1.
 func _ready() -> void:
 	_rest_position = pivot.position
 	_rest_rotation = pivot.rotation
+	_setup_blood_coating()
+
+
+func _setup_blood_coating() -> void:
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+	noise.frequency = 0.06
+	noise.fractal_octaves = 2
+	var texture := NoiseTexture2D.new()
+	texture.noise = noise
+	texture.seamless = true
+	texture.width = 128
+	texture.height = 128
+
+	var shader := Shader.new()
+	shader.code = BLOOD_SHADER
+	_blood_material = ShaderMaterial.new()
+	_blood_material.shader = shader
+	_blood_material.set_shader_parameter("noise_tex", texture)
+	_blood_material.set_shader_parameter("coverage", 0.0)
+	for part_name in ["Blade", "Cup"]:
+		var part := pivot.get_node_or_null(part_name) as GeometryInstance3D
+		if part:
+			part.material_overlay = _blood_material
+
+
+## Adds blood to the blade for a hit of the given impact (0 to 1).
+func add_blood(impact: float) -> void:
+	_blood = minf(_blood + blood_per_hit * (0.5 + impact), blood_max)
 
 
 func _process(delta: float) -> void:
+	if _blood > 0.0:
+		_blood = maxf(_blood - blood_dry_rate * delta, 0.0)
+		_blood_material.set_shader_parameter("coverage", _blood)
 	if _held:
 		_held_time += delta
 		# Charging waits for any move in progress to finish.
@@ -276,6 +335,8 @@ func _apply_hits(hitbox: Area3D, damage_amount: int, local_impulse: Vector3, imp
 			hit_any = true
 	if hit_any:
 		hit_landed.emit(impact, damage_dealt)
+		if damage_dealt > 0:
+			add_blood(impact)
 
 
 func _try_spend(cost: float) -> bool:

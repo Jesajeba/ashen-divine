@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Ashen Divine"
+config/name="Godhusk"
 run/main_scene="res://ui/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 Audio="*res://audio/audio.gd"
 Vfx="*res://vfx/vfx.gd"
+Settings="*res://settings/settings.gd"
 
 [display]
 

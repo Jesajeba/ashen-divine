@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Pause menu, toggled with Esc (ui_cancel). Pauses the game, frees the mouse,
-## and offers resume, master volume, return to the main menu, and quit. Runs
+## and offers resume, master volume, mouse sensitivity, return to the main
+## menu, and quit. Runs
 ## while the tree is paused.
 
 const MAIN_MENU_SCENE := "res://ui/main_menu.tscn"
@@ -10,6 +11,8 @@ const MAIN_MENU_SCENE := "res://ui/main_menu.tscn"
 @onready var quit_button: Button = %QuitButton
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var volume_value: Label = %VolumeValue
+@onready var sensitivity_slider: HSlider = %SensitivitySlider
+@onready var sensitivity_value: Label = %SensitivityValue
 
 
 func _ready() -> void:
@@ -17,6 +20,9 @@ func _ready() -> void:
 	volume_slider.value = roundf(Audio.master_volume * 100.0)
 	_update_volume_label(volume_slider.value)
 	volume_slider.value_changed.connect(_on_volume_changed)
+	sensitivity_slider.value = Settings.mouse_sensitivity
+	sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
+	sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
 	resume_button.pressed.connect(close)
 	menu_button.pressed.connect(_on_menu_pressed)
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
@@ -48,6 +54,11 @@ func _on_menu_pressed() -> void:
 	get_tree().paused = false
 	Engine.time_scale = 1.0
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+
+func _on_sensitivity_changed(value: float) -> void:
+	Settings.set_mouse_sensitivity(value)
+	sensitivity_value.text = "%.2f" % value
 
 
 func _on_volume_changed(value: float) -> void:

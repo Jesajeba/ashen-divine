@@ -11,7 +11,6 @@ extends CharacterBody3D
 @export var walk_speed := 4.0
 @export var acceleration := 9.0
 @export var jump_velocity := 4.5
-@export var mouse_sensitivity := 0.002 ## Radians per pixel of mouse movement.
 @export_range(1.0, 89.0) var max_pitch_degrees := 89.0
 @export var attack_move_multiplier := 0.35 ## Walk speed multiplier while attacking, charging or drinking.
 @export var step_length := 1.9 ## Meters walked between footstep sounds.
@@ -27,15 +26,15 @@ extends CharacterBody3D
 @export var dash_tilt := 6.0 ## Degrees the camera rolls toward a sideways dodge.
 
 @export_group("Impact Feel")
-@export var hitstop_min := 0.04 ## Seconds of hit-stop for the lightest hit...
-@export var hitstop_max := 0.12 ## ...and for the heaviest.
-@export var hitstop_time_scale := 0.05
+@export var hitstop_min := 0.065 ## Seconds of hit-stop for the lightest hit...
+@export var hitstop_max := 0.17 ## ...and for the heaviest.
+@export var hitstop_time_scale := 0.035 ## Game speed during hit-stop (near 0 is a hard freeze).
 @export var shake_min := 0.01 ## Camera shake (meters) for the lightest hit...
 @export var shake_max := 0.04 ## ...and for the heaviest.
 @export var pistol_shake := 0.03
-@export var parry_hitstop := 0.15
+@export var parry_hitstop := 0.22
 @export var parry_shake := 0.05
-@export var hurt_hitstop := 0.06
+@export var hurt_hitstop := 0.09
 @export var hurt_shake := 0.06
 @export var shake_decay := 14.0
 @export var death_text_delay := 0.8 ## Seconds after dying before "YOU DIED" starts fading in.
@@ -55,6 +54,31 @@ extends CharacterBody3D
 @export var land_dip := 0.05 ## Meters the view dips on landing from a fall.
 @export var low_health_threshold := 0.35 ## Below this fraction of max health, the screen edges pulse red.
 
+@export_group("Screen Blood")
+@export var screen_blood_max_splats := 6 ## Splats from the closest kills; farther ones get fewer.
+@export var screen_blood_hold := 1.4 ## Seconds splats stay fully visible before fading.
+@export var screen_blood_fade := 2.0
+
+## One blood splat on the screen: a blob with a ragged, noisy edge, darker
+## and glossier toward its middle.
+const SCREEN_BLOOD_SHADER := """
+shader_type canvas_item;
+
+uniform sampler2D noise_tex : repeat_enable;
+uniform vec2 seed = vec2(0.0);
+uniform float fade : hint_range(0.0, 1.0) = 1.0;
+uniform vec4 blood_color : source_color = vec4(0.38, 0.0, 0.0, 0.9);
+
+void fragment() {
+	vec2 centered = UV - 0.5;
+	float dist = length(centered) * 2.0;
+	float n = texture(noise_tex, UV * 0.9 + seed).r;
+	float edge = smoothstep(0.62, 0.55, dist + (n - 0.5) * 0.7);
+	float body = 0.55 + 0.45 * (1.0 - dist);
+	COLOR = vec4(blood_color.rgb * body, edge * fade * blood_color.a);
+}
+"""
+
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var sword: Sword = $Head/Camera3D/Sword
@@ -67,6 +91,7 @@ extends CharacterBody3D
 @onready var message_label: Label = $HUD/Message
 @onready var crosshair: ColorRect = $HUD/Crosshair
 @onready var vignette: ColorRect = $HUD/Vignette
+@onready var screen_blood: Control = $HUD/ScreenBlood
 @onready var death_fade: ColorRect = $HUD/DeathFade
 @onready var death_text: Label = $HUD/DeathFade/DeathText
 @onready var banner: Control = $HUD/Banner
@@ -97,6 +122,7 @@ var _land_offset := 0.0
 var _time := 0.0
 var _camera_base_y := 0.0
 var _weapon_rests: Array[Dictionary] = [] ## {node, position, rotation} for each held item.
+var _screen_blood_material: ShaderMaterial
 var _crosshair_tween: Tween
 var _crosshair_color: Color
 
@@ -135,6 +161,16 @@ func is_dead() -> bool:
 ## True during a sword windup or strike. Enemies use this to react.
 func is_attack_committed() -> bool:
 	return sword.is_committed()
+
+
+## Shakes the camera by up to amount meters, fading out.
+func shake(amount: float) -> void:
+	_add_shake(amount)
+
+
+## Briefly freezes the game for duration seconds (real time) to sell an impact.
+func hitstop(duration: float) -> void:
+	_hitstop(duration)
 
 
 func grant_max_health(amount: float) -> void:
@@ -176,8 +212,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		# screen_relative ignores the window stretch scale, so sensitivity
 		# stays consistent regardless of window size.
 		var delta: Vector2 = event.screen_relative
-		rotate_y(-delta.x * mouse_sensitivity)
-		head.rotate_x(-delta.y * mouse_sensitivity)
+		var look_speed := Settings.get_look_speed() # Set in the options; see settings.gd.
+		rotate_y(-delta.x * look_speed)
+		head.rotate_x(-delta.y * look_speed)
 		var max_pitch := deg_to_rad(max_pitch_degrees)
 		head.rotation.x = clampf(head.rotation.x, -max_pitch, max_pitch)
 		# Weapons lag behind the turn.
@@ -445,6 +482,56 @@ func _on_died() -> void:
 	tween.tween_property(death_fade, "color:a", 1.0, death_fade_time)
 	tween.parallel().tween_property(death_text, "modulate:a", 0.0, death_fade_time)
 	tween.tween_callback(_respawn)
+
+
+## Splatters blood across the screen, e.g. from a kill up close. intensity
+## (0 to 1) sets how many splats and how big. They drip down a little and fade.
+func splatter_screen(intensity: float) -> void:
+	intensity = clampf(intensity, 0.0, 1.0)
+	if not _screen_blood_material:
+		_screen_blood_material = _make_screen_blood_material()
+	var view := screen_blood.size
+	var count := maxi(1, roundi(screen_blood_max_splats * intensity))
+	for i in count:
+		var splat := ColorRect.new()
+		splat.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var material: ShaderMaterial = _screen_blood_material.duplicate()
+		material.set_shader_parameter("seed", Vector2(randf() * 10.0, randf() * 10.0))
+		material.set_shader_parameter("fade", 0.0)
+		splat.material = material
+		var side := randf_range(180.0, 420.0) * (0.6 + intensity * 0.6)
+		splat.size = Vector2(side, side * randf_range(0.8, 1.25))
+		splat.pivot_offset = splat.size * 0.5
+		splat.rotation = randf() * TAU
+		# Mostly toward the edges, keeping the center readable.
+		var spot := Vector2(randf(), randf())
+		if absf(spot.x - 0.5) < 0.2 and absf(spot.y - 0.5) < 0.2:
+			spot.x = 0.15 if spot.x < 0.5 else 0.85
+		splat.position = spot * view - splat.size * 0.5
+		screen_blood.add_child(splat)
+
+		var tween := splat.create_tween()
+		tween.tween_property(material, "shader_parameter/fade", 1.0, 0.06)
+		tween.tween_interval(screen_blood_hold * randf_range(0.8, 1.2))
+		tween.tween_property(material, "shader_parameter/fade", 0.0, screen_blood_fade)
+		tween.parallel().tween_property(splat, "position:y", splat.position.y + randf_range(20.0, 70.0),
+				screen_blood_fade).set_ease(Tween.EASE_IN)
+		tween.tween_callback(splat.queue_free)
+
+
+func _make_screen_blood_material() -> ShaderMaterial:
+	var noise := FastNoiseLite.new()
+	noise.frequency = 0.02
+	noise.fractal_octaves = 4
+	var texture := NoiseTexture2D.new()
+	texture.noise = noise
+	texture.seamless = true
+	var shader := Shader.new()
+	shader.code = SCREEN_BLOOD_SHADER
+	var material := ShaderMaterial.new()
+	material.shader = shader
+	material.set_shader_parameter("noise_tex", texture)
+	return material
 
 
 ## Shows large centered text, like a boss victory announcement.

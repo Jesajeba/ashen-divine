@@ -3,41 +3,70 @@ extends Node
 ## bursts and blood decals into the current scene. Everything is built in code
 ## from the settings below, so there are no extra scene files to manage.
 
-const MAX_DECALS := 40 ## Oldest blood decals are removed beyond this.
+const MAX_DECALS := 90 ## Oldest blood decals are removed beyond this.
+const MAX_DROPLETS := 160 ## Cap per burst, so huge hits stay cheap.
 
+## Scales all blood: droplet count, how many splats are left and how far
+## they scatter. 1 is a light touch; raise it for a gorier game.
+@export var blood_amount := 2.0
 @export var blood_color := Color(0.42, 0.02, 0.02)
 @export var spark_color := Color(1.0, 0.65, 0.3)
 @export var parry_color := Color(1.0, 0.92, 0.7)
 
 var _blood_process: ParticleProcessMaterial
+var _spurt_process: ParticleProcessMaterial
 var _blood_mesh: Mesh
 var _spark_process: ParticleProcessMaterial
 var _spark_mesh: Mesh
 var _parry_mesh: Mesh
+var _dust_process: ParticleProcessMaterial
+var _dust_mesh: Mesh
 var _decal_texture: Texture2D
-var _decals: Array[Decal] = []
+var _decals := [] ## Live blood decals, oldest first. Untyped so freed entries can be checked safely.
 
 
 func _ready() -> void:
-	_blood_process = _make_process(35.0, 1.5, 4.5, Vector3(0, -9.8, 0), 0.6, 1.4)
+	_blood_process = _make_process(40.0, 1.5, 5.0, Vector3(0, -9.8, 0), 0.6, 1.6)
+	_spurt_process = _make_process(12.0, 4.0, 8.0, Vector3(0, -9.8, 0), 0.8, 1.8)
 	_blood_mesh = _make_sphere(0.025, _make_material(blood_color, false))
 	_spark_process = _make_process(60.0, 2.0, 6.0, Vector3(0, -4.0, 0), 0.5, 1.0)
 	_spark_mesh = _make_sphere(0.012, _make_material(spark_color, true))
 	_parry_mesh = _make_sphere(0.018, _make_material(parry_color, true))
+	# Dust billows out low and wide, then settles.
+	_dust_process = _make_process(85.0, 1.5, 4.5, Vector3(0, -1.5, 0), 1.0, 2.5)
+	_dust_process.damping_min = 2.0
+	_dust_process.damping_max = 3.0
+	_dust_mesh = _make_sphere(0.06, _make_material(Color(0.35, 0.33, 0.3), false))
 	_decal_texture = _make_splat_texture()
 
 
-## Blood spray flying along direction, sometimes leaving a pool below.
-## amount scales the number of droplets and the chance/size of the pool.
+## Blood flying along direction: a wide spray plus a fast, narrow spurt, then
+## splats scattered on the floor around position. amount scales this hit
+## (e.g. 2 for a critical); blood_amount scales all blood.
 func blood(position: Vector3, direction: Vector3, amount := 1.0) -> void:
-	_burst(_blood_process, _blood_mesh, position, direction, roundi(18 * amount), 0.9)
-	if randf() < 0.5 * amount:
-		blood_decal(position, randf_range(0.5, 0.9) * sqrt(amount))
+	var total := amount * blood_amount
+	_burst(_blood_process, _blood_mesh, position, direction, mini(roundi(20 * total), MAX_DROPLETS), 1.0)
+	_burst(_spurt_process, _blood_mesh, position, direction, mini(roundi(8 * total), MAX_DROPLETS), 0.8)
+
+	# Roughly 0.6 splats per unit of blood, the fraction left as a chance.
+	var splats := total * 0.6
+	var count := floori(splats) + (1 if randf() < splats - floorf(splats) else 0)
+	var scatter := 0.5 * sqrt(total)
+	# Splats land mostly ahead of the spray, where the droplets fall.
+	var ahead := Vector3(direction.x, 0.0, direction.z).normalized() * scatter * 0.6
+	for i in count:
+		var offset := Vector3(randf_range(-scatter, scatter), 0.0, randf_range(-scatter, scatter))
+		blood_decal(position + ahead + offset, randf_range(0.4, 0.9) * sqrt(amount))
 
 
 ## Sparks bouncing off a surface, e.g. a bullet hitting a wall.
 func sparks(position: Vector3, normal: Vector3) -> void:
 	_burst(_spark_process, _spark_mesh, position, normal, 14, 0.35)
+
+
+## A cloud of dust kicked up from the ground, e.g. by something heavy landing.
+func dust(position: Vector3, amount := 1.0) -> void:
+	_burst(_dust_process, _dust_mesh, position, Vector3.UP, roundi(60 * amount), 1.4)
 
 
 ## A bright burst and flash of light for a successful parry.
@@ -72,11 +101,11 @@ func blood_decal(position: Vector3, size := 0.7) -> void:
 	scene.add_child(decal)
 	decal.global_position = hit.position
 	decal.rotate_y(randf() * TAU)
+	# This node outlives level reloads, which free their decals; forget those.
+	_decals = _decals.filter(func(old: Variant) -> bool: return is_instance_valid(old))
 	_decals.append(decal)
 	while _decals.size() > MAX_DECALS:
-		var oldest: Decal = _decals.pop_front()
-		if is_instance_valid(oldest):
-			oldest.queue_free()
+		_decals.pop_front().queue_free()
 
 
 func _burst(process: ParticleProcessMaterial, mesh: Mesh, position: Vector3,

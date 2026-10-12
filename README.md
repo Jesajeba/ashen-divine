@@ -1,21 +1,21 @@
-# Ashen Divine
+# Godhusk
 
 *Only embers remember the gods.*
 
 A first-person soulslike prototype made in Godot 4. Fight your way through a
 torch-lit dungeon with a rapier and a flintlock pistol, find what's hidden
-behind the walls, and face the Reaper at its end.
+behind the walls, and face Husk, the fallen god, at its end.
 
 ## Download
 
 | Platform | Download |
 | --- | --- |
-| Windows | [AshenDivine-windows.zip](https://github.com/Jesajeba/ashen-divine/releases/latest/download/AshenDivine-windows.zip) |
-| macOS (Intel and Apple Silicon) | [AshenDivine-macos.zip](https://github.com/Jesajeba/ashen-divine/releases/latest/download/AshenDivine-macos.zip) |
+| Windows | [Godhusk-windows.zip](https://github.com/Jesajeba/godhusk/releases/latest/download/Godhusk-windows.zip) |
+| macOS (Intel and Apple Silicon) | [Godhusk-macos.zip](https://github.com/Jesajeba/godhusk/releases/latest/download/Godhusk-macos.zip) |
 
-All versions are on the [Releases page](https://github.com/Jesajeba/ashen-divine/releases).
+All versions are on the [Releases page](https://github.com/Jesajeba/godhusk/releases).
 
-**Windows:** unzip and run `AshenDivine.exe`. If Windows says it protected your
+**Windows:** unzip and run `Godhusk.exe`. If Windows says it protected your
 PC, click **More info → Run anyway** (the game isn't code-signed).
 
 **macOS:** unzip, then right-click the app and choose **Open**, then **Open**
@@ -23,7 +23,7 @@ again (the app isn't signed by Apple). If macOS says the app is damaged, run
 this once in Terminal and try again:
 
 ```
-xattr -dr com.apple.quarantine "/path/to/Ashen Divine.app"
+xattr -dr com.apple.quarantine "/path/to/Godhusk.app"
 ```
 
 ## Controls

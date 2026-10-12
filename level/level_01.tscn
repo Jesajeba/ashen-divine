@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" path="res://level/torch.tscn" id="13_torch"]
 [ext_resource type="PackedScene" path="res://level/brazier.tscn" id="14_brazier"]
 [ext_resource type="Script" path="res://level/level_lighting.gd" id="15_level_lighting"]
+[ext_resource type="PackedScene" path="res://level/chandelier.tscn" id="16_chandelier"]
 
 [sub_resource type="Environment" id="Environment_level"]
 background_mode = 1
@@ -711,6 +712,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 3, -96)
 [node name="ArenaBrazier4" parent="Lights" groups=["arena_brazier"] instance=ExtResource("14_brazier")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 3, -96)
 
+[node name="ArenaChandelier1" parent="Lights" groups=["arena_brazier"] instance=ExtResource("16_chandelier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 9.6, -80)
+
+[node name="ArenaChandelier2" parent="Lights" groups=["arena_brazier"] instance=ExtResource("16_chandelier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 9.6, -80)
+
+[node name="ArenaChandelier3" parent="Lights" groups=["arena_brazier"] instance=ExtResource("16_chandelier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 9.6, -90)
+
+[node name="ArenaChandelier4" parent="Lights" groups=["arena_brazier"] instance=ExtResource("16_chandelier")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 9.6, -90)
+
 [node name="Decor" type="Node3D" parent="."]
 
 [node name="CourtyardDust" type="GPUParticles3D" parent="Decor"]
@@ -816,7 +829,7 @@ mouse_filter = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 24
-text = "The Reaper"
+text = "Husk"
 
 [node name="BossBar" type="Control" parent="BossArena/BossHUD" node_paths=PackedStringArray("source")]
 layout_mode = 3

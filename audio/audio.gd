@@ -49,6 +49,10 @@ const SOUNDS := {
 	"reaper_voice": { "files": ["res://sfx/demon_voice_1.mp3", "res://sfx/demon_voice_2.mp3"],
 		"volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.06 },
 	"boss_phase_two": { "files": ["res://sfx/phase2_scream.mp3"], "volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.0 },
+	"boss_land": { "files": ["res://sfx/explosion_medium.mp3"], "volume_db": 0.0, "pitch": 0.55, "pitch_variation": 0.0 },
+	"boss_death_scream": { "files": ["res://sfx/phase2_scream.mp3"], "volume_db": 0.0, "pitch": 0.75, "pitch_variation": 0.0 },
+	"blood_gush": { "files": ["res://sfx/blood_splatter.mp3", "res://sfx/blood_splatter_2.mp3", "res://sfx/blood_splatter_3.mp3"],
+		"volume_db": -3.0, "pitch": 0.7, "pitch_variation": 0.15 },
 	"boss_death": { "files": ["res://sfx/explosion_large.mp3"], "volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.0 },
 }
 

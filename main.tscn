@@ -89,7 +89,6 @@ navigation_mesh = SubResource("NavigationMesh_level")
 script = ExtResource("3_nav_region")
 
 [node name="Player" parent="." unique_id=470176899 instance=ExtResource("1_player")]
-mouse_sensitivity = 0.001
 
 [node name="Enemy1" parent="." instance=ExtResource("2_enemy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -12)
