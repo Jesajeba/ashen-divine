@@ -15,19 +15,19 @@ signal fired
 signal parried
 ## Emitted when the shot hits something that takes damage or parries.
 signal target_hit
+## Emitted when the pistol is fired (false) and when it's reloaded (true).
+signal loaded_changed(loaded: bool)
 
 @export var damage := 3
 @export var knockback := 12.0 ## Impulse applied to hit bodies.
 @export var max_range := 60.0
 @export var ignition_delay := 0.08 ## Delay between the hammer falling and the shot.
 @export var reload_time := 2.5 ## Time spent lowered, between recoil and raising again.
-@export var stamina_cost := 15.0
-## Health spent per shot. It stays reclaimable (see Health) and won't be
-## spent if it would be fatal.
+## Health spent per shot (its only cost). It stays reclaimable (see Health)
+## and won't be spent if it would be fatal.
 @export var health_cost := 10.0
 
-## Set by the wielder. Without them, firing is free.
-var stamina: Stamina
+## Set by the wielder. Without it, firing is free.
 var health: Health
 
 @onready var pivot: Node3D = $Pivot
@@ -56,11 +56,10 @@ func fire() -> void:
 	if health and health.value <= health_cost:
 		health.spend(health_cost) # Refused; this just flags it on the HP bar.
 		return
-	if stamina and not stamina.try_spend(stamina_cost):
-		return
 	if health:
 		health.spend(health_cost)
 	_loaded = false
+	loaded_changed.emit(false)
 
 	var recoil_rotation := _rest_rotation + Vector3(deg_to_rad(30.0), 0.0, 0.0)
 	var recoil_position := _rest_position + Vector3(0.0, 0.02, 0.1)
@@ -86,7 +85,9 @@ func fire() -> void:
 	tween.tween_callback(func() -> void: hammer.rotation = _hammer_cocked)
 	tween.tween_property(pivot, "rotation", _rest_rotation, 0.3)
 	tween.parallel().tween_property(pivot, "position", _rest_position, 0.3)
-	tween.tween_callback(func() -> void: _loaded = true)
+	tween.tween_callback(func() -> void:
+		_loaded = true
+		loaded_changed.emit(true))
 
 
 func _discharge() -> void:

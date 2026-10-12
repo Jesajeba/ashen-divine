@@ -64,6 +64,7 @@ func _on_begin_pressed() -> void:
 	if _leaving:
 		return
 	_leaving = true
+	Progress.reset() # A fresh playthrough from the start of the level.
 	begin_button.disabled = true
 	quit_button.disabled = true
 	var tween := create_tween()

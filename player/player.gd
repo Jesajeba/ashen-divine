@@ -3,7 +3,8 @@ extends CharacterBody3D
 ## Shift to dodge in the direction you're moving (forward if standing still),
 ## left click to attack (three-hit rapier combo; hold to charge a lunging heavy
 ## thrust), right click to fire the pistol, F to drink from the healing flask.
-## Dodging, attacking and shooting cost stamina (see the Stamina node).
+## Dodging and attacking cost stamina (see the Stamina node); shooting costs
+## health instead, which melee hits can win back.
 ## Dodges have invincibility frames. Shooting an enemy mid-attack parries it.
 ## Esc opens the pause menu (PauseMenu node). If the mouse gets freed some
 ## other way, clicking inside the window captures it again.
@@ -42,6 +43,15 @@ extends CharacterBody3D
 @export var death_fade_time := 1.2 ## Seconds for the final fade to black before the level restarts.
 ## Health won back per point of melee damage dealt, out of what the pistol spent.
 @export var reclaim_per_damage := 5.0
+## Shows a short sequence of control hints when a new game starts.
+@export var show_control_hints := false
+const CONTROL_HINTS := [
+	"WASD to move, mouse to look",
+	"Left click to attack. Hold it to charge a lunging thrust",
+	"Shift to dodge through attacks",
+	"Right click to fire. Shoot a foe as it swings to parry",
+	"F to drink from your flask",
+]
 
 @export_group("Weapon Feel")
 @export var sway_strength := 0.0012 ## Radians the weapons lag per pixel of mouse movement...
@@ -96,6 +106,8 @@ void fragment() {
 @onready var death_text: Label = $HUD/DeathFade/DeathText
 @onready var banner: Control = $HUD/Banner
 @onready var banner_label: Label = $HUD/Banner/Text
+@onready var prompt_label: Label = $HUD/Prompt
+@onready var pistol_icon: Control = $HUD/PistolReady
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -111,6 +123,8 @@ var _hitstop_until_msec := 0
 var _iframes_left := 0.0
 var _flash_tween: Tween
 var _message_tween: Tween
+var _interactable: Node ## What pressing interact would use, e.g. a bonfire.
+var _leaving := false ## Resting or the ending is playing; input is ignored.
 var _step_distance := 0.0
 var _was_on_floor := true
 var _fall_speed := 0.0
@@ -132,7 +146,6 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_base_fov = camera.fov
 	sword.stamina = stamina
-	pistol.stamina = stamina
 	pistol.health = health
 	sword.lunge_requested.connect(_on_sword_lunge_requested)
 	sword.hit_landed.connect(_on_sword_hit_landed)
@@ -144,6 +157,12 @@ func _ready() -> void:
 	flask.charges_changed.connect(_update_flask_icons)
 	_update_flask_icons(flask.charges)
 	pistol.target_hit.connect(_show_hit_marker)
+	pistol.loaded_changed.connect(_on_pistol_loaded_changed)
+	prompt_label.visible = false
+
+	if show_control_hints and not Progress.hints_shown and Progress.checkpoint_id == "":
+		Progress.hints_shown = true
+		_show_hints()
 
 	_camera_base_y = camera.position.y
 	for item: Node3D in [sword, pistol, flask]:
@@ -173,9 +192,80 @@ func hitstop(duration: float) -> void:
 	_hitstop(duration)
 
 
-func grant_max_health(amount: float) -> void:
+## Raises max health. announce=false skips the flash, e.g. when restoring a
+## bonus found earlier in this playthrough.
+func grant_max_health(amount: float, announce := true) -> void:
 	health.increase_max(amount)
-	_flash_screen(Color(1.0, 0.85, 0.4, 0.25), 0.8)
+	if announce:
+		_flash_screen(Color(1.0, 0.85, 0.4, 0.25), 0.8)
+
+
+## Called by things the player can use (like a bonfire) when in range.
+func set_interactable(target: Node, prompt: String) -> void:
+	_interactable = target
+	prompt_label.text = prompt
+	prompt_label.visible = true
+
+
+func clear_interactable(target: Node) -> void:
+	if _interactable == target:
+		_interactable = null
+		prompt_label.visible = false
+
+
+## Rest at a bonfire: fade out, then reload the level from the checkpoint,
+## healed with full flasks and enemies respawned.
+func rest_and_reload() -> void:
+	if _leaving:
+		return
+	_leaving = true
+	_iframes_left = 99.0 # Nothing can interrupt the rest.
+	sword.cancel_charge()
+	prompt_label.visible = false
+	death_text.text = "Rested"
+	death_text.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
+	var tween := create_tween().set_trans(Tween.TRANS_SINE)
+	tween.tween_property(death_fade, "color:a", 1.0, 0.8)
+	tween.parallel().tween_property(death_text, "modulate:a", 1.0, 0.8)
+	tween.tween_interval(0.8)
+	tween.tween_callback(_respawn)
+
+
+## After the final boss: fade to black with a closing line, then return to
+## the main menu.
+func play_ending(text := "Thanks for playing", hold := 3.5) -> void:
+	if _leaving:
+		return
+	_leaving = true
+	_iframes_left = 999.0
+	death_text.text = text
+	death_text.add_theme_color_override("font_color", Color(0.92, 0.82, 0.6))
+	death_text.add_theme_font_size_override("font_size", 64)
+	var tween := create_tween().set_trans(Tween.TRANS_SINE)
+	tween.tween_property(death_fade, "color:a", 1.0, 2.5)
+	tween.tween_property(death_text, "modulate:a", 1.0, 1.5)
+	tween.tween_interval(hold)
+	tween.tween_property(death_text, "modulate:a", 0.0, 1.5)
+	tween.tween_callback(func() -> void:
+		Engine.time_scale = 1.0
+		get_tree().change_scene_to_file("res://ui/main_menu.tscn"))
+
+
+func _show_hints() -> void:
+	var tween := create_tween()
+	tween.tween_interval(1.5)
+	for hint in CONTROL_HINTS:
+		tween.tween_callback(show_message.bind(hint))
+		tween.tween_interval(4.0)
+
+
+func _on_pistol_loaded_changed(loaded: bool) -> void:
+	var tween := pistol_icon.create_tween()
+	tween.tween_property(pistol_icon, "modulate:a", 1.0 if loaded else 0.2, 0.2)
+	if loaded:
+		# A little pop so the reload registers.
+		pistol_icon.scale = Vector2.ONE * 1.4
+		tween.parallel().tween_property(pistol_icon, "scale", Vector2.ONE, 0.25)
 
 
 ## Shows a line of text near the bottom of the screen for a few seconds.
@@ -206,7 +296,7 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if is_dead():
+	if is_dead() or _leaving:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		# screen_relative ignores the window stretch scale, so sensitivity
@@ -234,6 +324,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			pistol.fire()
 	elif event.is_action_pressed("heal"):
 		_try_drink()
+	elif event.is_action_pressed("interact"):
+		if _interactable and is_instance_valid(_interactable) and _interactable.has_method("interact"):
+			_interactable.call("interact", self)
 
 
 func _process(delta: float) -> void:
@@ -304,7 +397,7 @@ func _show_hit_marker() -> void:
 
 func _physics_process(delta: float) -> void:
 	_iframes_left = maxf(_iframes_left - delta, 0.0)
-	if is_dead():
+	if is_dead() or _leaving:
 		velocity.x = 0.0
 		velocity.z = 0.0
 		if not is_on_floor():

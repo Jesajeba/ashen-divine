@@ -16,6 +16,8 @@
 [ext_resource type="PackedScene" path="res://level/brazier.tscn" id="14_brazier"]
 [ext_resource type="Script" path="res://level/level_lighting.gd" id="15_level_lighting"]
 [ext_resource type="PackedScene" path="res://level/chandelier.tscn" id="16_chandelier"]
+[ext_resource type="Script" path="res://level/checkpoint.gd" id="17_checkpoint"]
+[ext_resource type="PackedScene" path="res://level/campfire.tscn" id="18_campfire"]
 
 [sub_resource type="Environment" id="Environment_level"]
 background_mode = 1
@@ -145,6 +147,9 @@ size = Vector3(0.3, 0.4, 0.3)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_relic"]
 radius = 0.8
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_bonfire"]
+radius = 2.2
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_fog"]
 size = Vector3(4, 4, 0.3)
@@ -849,8 +854,26 @@ script = ExtResource("11_resource_bar")
 source = NodePath("../../Reaper")
 fill_color = Color(0.7, 0.12, 0.1, 1)
 
+[node name="Bonfire" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 3, -56.5)
+script = ExtResource("17_checkpoint")
+checkpoint_id = "terrace"
+
+[node name="Campfire" parent="Bonfire" instance=ExtResource("18_campfire")]
+
+[node name="Area" type="Area3D" parent="Bonfire"]
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Bonfire/Area"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("SphereShape3D_bonfire")
+
+[node name="SpawnPoint" type="Marker3D" parent="Bonfire"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -1)
+
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+show_control_hints = true
 
 [node name="Enemies" type="Node3D" parent="."]
 

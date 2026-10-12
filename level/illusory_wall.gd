@@ -9,10 +9,17 @@ extends LevelBlock
 var _revealed := false
 
 
+func _ready() -> void:
+	super()
+	if not Engine.is_editor_hint() and Progress.illusory_wall_revealed:
+		queue_free() # Already found this playthrough.
+
+
 func take_hit(_damage: int, _impulse: Vector3) -> int:
 	if _revealed:
 		return 0
 	_revealed = true
+	Progress.illusory_wall_revealed = true
 	Audio.play_at("illusory_wall", global_position)
 	collision_layer = 0
 	collision_mask = 0

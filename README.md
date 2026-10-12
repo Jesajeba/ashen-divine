@@ -37,6 +37,7 @@ xattr -dr com.apple.quarantine "/path/to/Godhusk.app"
 | Dodge | Shift |
 | Jump | Space |
 | Drink flask | F |
+| Rest at a bonfire | E |
 | Pause | Esc |
 
 ## Tips
@@ -45,7 +46,10 @@ xattr -dr com.apple.quarantine "/path/to/Godhusk.app"
   weapon just before it swings.
 - Shoot an enemy as its blow is launched to **parry** it. It staggers, and
   every hit while it reels does triple damage.
-- The pistol costs health. Win it back by landing melee hits soon after.
+- The pistol costs health instead of stamina. Win it back by landing melee
+  hits soon after.
+- Rest at the bonfire before the boss: you'll come back there when you die,
+  healed and with your flasks refilled (but so are the enemies).
 - Not every wall is what it seems.
 
 ## Building from source

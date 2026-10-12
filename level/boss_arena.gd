@@ -1,11 +1,16 @@
 extends Node3D
 ## Runs a boss fight. When the player walks into the Trigger area, the fog
 ## gate seals behind them, the boss bar appears and the boss wakes up. When the
-## boss dies, the fog gate fades away and the bar is hidden.
+## boss dies, the fog gate fades away, the bar is hidden, a victory banner
+## shows, and then the ending plays.
 
 @export var boss: Enemy
 @export var defeat_message := "GOD SLAIN"
 @export var defeat_color := Color(0.95, 0.8, 0.45)
+## Shown on a black screen after victory before returning to the main menu.
+## Leave empty to let the player keep exploring instead.
+@export var ending_text := "Thanks for playing"
+@export var ending_delay := 8.5 ## Seconds after the boss dies (the banner is done by then).
 @export var boss_music := "boss" ## Track from Audio.MUSIC played during the fight.
 @export var after_music := "main" ## Track to return to after victory.
 ## Fires in this group (flame_light.gd) turn this color when the boss enters
@@ -54,6 +59,10 @@ func _on_boss_died() -> void:
 		# Wait a beat so the death itself lands first.
 		get_tree().create_timer(1.0).timeout.connect(
 				Callable(player, "show_banner").bind(defeat_message, defeat_color, 3.5))
+	if ending_text != "" and player and player.has_method("play_ending"):
+		# After the banner has faded, close out the game.
+		get_tree().create_timer(ending_delay).timeout.connect(
+				Callable(player, "play_ending").bind(ending_text))
 
 	# Fade the fog gate away and open the way back.
 	fog_gate.collision_layer = 0
