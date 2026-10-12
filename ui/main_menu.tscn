@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cml0vgprgem55" path="res://ui/main_menu.gd" id="1_menu"]
 [ext_resource type="PackedScene" path="res://level/campfire.tscn" id="2_campfire"]
 [ext_resource type="Script" uid="uid://bb65ibkiivw0l" path="res://level/music_cue.gd" id="3_music_cue"]
+[ext_resource type="Script" uid="uid://euis8d2nhhx3" path="res://ui/display_options.gd" id="4_display_options"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_night"]
 sky_top_color = Color(0.015, 0.02, 0.045, 1)
@@ -144,6 +145,7 @@ theme_override_font_sizes/font_size = 34
 text = "Begin"
 flat = true
 alignment = 0
+metadata/ui_press_sound = "ui_start"
 
 [node name="VolumeRow" type="HBoxContainer" parent="UI/Menu" unique_id=388513132]
 layout_mode = 2
@@ -171,18 +173,18 @@ theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
 theme_override_font_sizes/font_size = 22
 text = "50%"
 
-[node name="SensitivityRow" type="HBoxContainer" parent="UI/Menu"]
+[node name="SensitivityRow" type="HBoxContainer" parent="UI/Menu" unique_id=187174558]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="SensitivityLabel" type="Label" parent="UI/Menu/SensitivityRow"]
+[node name="SensitivityLabel" type="Label" parent="UI/Menu/SensitivityRow" unique_id=1925163876]
 custom_minimum_size = Vector2(130, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
 theme_override_font_sizes/font_size = 22
 text = "Sensitivity"
 
-[node name="SensitivitySlider" type="HSlider" parent="UI/Menu/SensitivityRow"]
+[node name="SensitivitySlider" type="HSlider" parent="UI/Menu/SensitivityRow" unique_id=870318703]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -192,13 +194,68 @@ max_value = 3.0
 step = 0.05
 value = 1.0
 
-[node name="SensitivityValue" type="Label" parent="UI/Menu/SensitivityRow"]
+[node name="SensitivityValue" type="Label" parent="UI/Menu/SensitivityRow" unique_id=109706099]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(56, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
 theme_override_font_sizes/font_size = 22
 text = "1.00"
+
+[node name="DisplayOptions" type="VBoxContainer" parent="UI/Menu" unique_id=950863742]
+layout_mode = 2
+theme_override_constants/separation = 14
+script = ExtResource("4_display_options")
+
+[node name="ModeRow" type="HBoxContainer" parent="UI/Menu/DisplayOptions" unique_id=2057048332]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ModeLabel" type="Label" parent="UI/Menu/DisplayOptions/ModeRow" unique_id=751930637]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "Display"
+
+[node name="ModeOption" type="OptionButton" parent="UI/Menu/DisplayOptions/ModeRow" unique_id=974237258]
+custom_minimum_size = Vector2(290, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 20
+flat = true
+
+[node name="ResolutionRow" type="HBoxContainer" parent="UI/Menu/DisplayOptions" unique_id=931309601]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ResolutionLabel" type="Label" parent="UI/Menu/DisplayOptions/ResolutionRow" unique_id=1156988226]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 22
+text = "Resolution"
+
+[node name="ResolutionOption" type="OptionButton" parent="UI/Menu/DisplayOptions/ResolutionRow" unique_id=515180433]
+custom_minimum_size = Vector2(290, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_font_sizes/font_size = 20
+flat = true
+
+[node name="ConfirmButton" type="Button" parent="UI/Menu/DisplayOptions"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.78, 0.74, 0.66, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.5, 1)
+theme_override_colors/font_focus_color = Color(1, 0.85, 0.5, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.7, 0.35, 1)
+theme_override_colors/font_disabled_color = Color(0.4, 0.38, 0.35, 1)
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Confirm display"
+flat = true
+alignment = 0
 
 [node name="QuitButton" type="Button" parent="UI/Menu" unique_id=582674720]
 unique_name_in_owner = true

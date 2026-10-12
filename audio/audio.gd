@@ -13,6 +13,11 @@ extends Node
 ##
 ## The player-facing master volume (set_master_volume, from the pause menu)
 ## is applied to the Master bus and saved to user://settings.cfg.
+##
+## MENU SOUNDS: every button, dropdown and slider added to the game gets
+## hover/press/tick sounds automatically. Give a node the metadata
+## "ui_press_sound" (a SOUNDS name) to change its press sound, or
+## "no_ui_sound" to leave it silent.
 
 ## files: one is picked at random each time.
 ## pitch: base pitch (1 = normal); pitch_variation: random +/- around it, so
@@ -45,6 +50,12 @@ const SOUNDS := {
 	"enemy_death": { "files": ["res://sfx/kill_effect_layer.mp3"], "volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.05 },
 	"spell_cast": { "files": ["res://sfx/spell_cast.mp3"], "volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.08 },
 	"orb_explosion": { "files": ["res://sfx/explosion_medium.mp3"], "volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.1 },
+	# Menus (wired up automatically, see _on_node_added)
+	"ui_hover": { "files": ["res://sfx/sword_swoosh_1.mp3", "res://sfx/swrod_swoosh_2.mp3"],
+		"volume_db": -16.0, "pitch": 2.2, "pitch_variation": 0.05 },
+	"ui_press": { "files": ["res://sfx/parry.mp3"], "volume_db": -9.0, "pitch": 1.5, "pitch_variation": 0.03 },
+	"ui_start": { "files": ["res://sfx/parry.mp3"], "volume_db": -4.0, "pitch": 0.8, "pitch_variation": 0.0 },
+	"ui_tick": { "files": ["res://sfx/footstep.mp3"], "volume_db": -12.0, "pitch": 2.6, "pitch_variation": 0.04 },
 	# Boss
 	"reaper_voice": { "files": ["res://sfx/demon_voice_1.mp3", "res://sfx/demon_voice_2.mp3"],
 		"volume_db": 0.0, "pitch": 1.0, "pitch_variation": 0.06 },
@@ -79,6 +90,7 @@ var _music_players: Array[AudioStreamPlayer] = []
 var _music_current := 0
 var _music_name := ""
 var _music_tweens: Array[Tween] = [null, null]
+var _last_tick_msec := 0
 
 
 func _ready() -> void:
@@ -92,6 +104,8 @@ func _ready() -> void:
 	var config := ConfigFile.new()
 	config.load(SETTINGS_PATH) # Missing on first run; the default is used then.
 	_apply_master_volume(config.get_value("audio", "master_volume", DEFAULT_MASTER_VOLUME))
+
+	get_tree().node_added.connect(_on_node_added)
 
 
 ## Sets the overall volume (0 to 1) and saves it.
@@ -183,6 +197,40 @@ func _set_music_tween(index: int, tween: Tween) -> void:
 	if _music_tweens[index]:
 		_music_tweens[index].kill()
 	_music_tweens[index] = tween
+
+
+## Gives menu controls their sounds as they enter the scene tree.
+func _on_node_added(node: Node) -> void:
+	if node.has_meta("no_ui_sound"):
+		return
+	if node is BaseButton:
+		var button := node as BaseButton
+		button.mouse_entered.connect(_on_control_hovered.bind(button))
+		button.pressed.connect(play.bind(String(button.get_meta("ui_press_sound", "ui_press"))))
+		if button is OptionButton:
+			(button as OptionButton).item_selected.connect(func(_index: int) -> void: play("ui_press"))
+	elif node is Slider:
+		var slider := node as Slider
+		slider.mouse_entered.connect(_on_control_hovered.bind(slider))
+		slider.value_changed.connect(_on_slider_changed.bind(slider))
+
+
+func _on_control_hovered(control: Control) -> void:
+	if control is BaseButton and (control as BaseButton).disabled:
+		return
+	play("ui_hover")
+
+
+func _on_slider_changed(_value: float, slider: Slider) -> void:
+	# Only when the player moves it (it has focus while dragged), not when a
+	# menu sets it from the saved settings. Throttled so a drag isn't a buzz.
+	if not slider.has_focus():
+		return
+	var now := Time.get_ticks_msec()
+	if now - _last_tick_msec < 60:
+		return
+	_last_tick_msec = now
+	play("ui_tick")
 
 
 func _entry(sound: String) -> Dictionary:
